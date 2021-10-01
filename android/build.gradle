@@ -73,6 +73,7 @@ android {
         minSdk 19
         targetSdk 30
         versionCode 22
+        applicationId "me.alex19ep.espeak"
         versionName "1.52-dev"
     }
 
