@@ -39,6 +39,7 @@ android {
         minSdk 21
         targetSdk 33
         versionCode 22
+        applicationId "me.alex19ep.espeak"
         versionName "1.52-dev"
 
         externalNativeBuild {
