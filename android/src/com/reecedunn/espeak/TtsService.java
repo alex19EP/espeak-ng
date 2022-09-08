@@ -113,13 +113,9 @@ public class TtsService extends TextToSpeechService {
     protected String[] onGetLanguage() {
         // This is used to specify the language requested from GetSampleText.
         if (mMatchingVoice == null) {
-            return new String[] { "eng", "GBR", "" };
+            return new String[] { "rus", "RUS", "" };
         }
-        return new String[] {
-            mMatchingVoice.locale.getISO3Language(),
-            mMatchingVoice.locale.getISO3Country(),
-            mMatchingVoice.locale.getVariant()
-        };
+        return new String[] { "rus", "RUS", "" };
     }
 
     private Pair<Voice, Integer> findVoice(String language, String country, String variant) {
@@ -186,7 +182,7 @@ public class TtsService extends TextToSpeechService {
                 if ((language.equals("vi") || language.equals("vie")) && (country.equals("VN") || country.equals("VNM"))) {
                     return new Pair<>(findVoice(language, country, "hue").first, match.second);
                 }
-                return new Pair<>(findVoice(language, country, "").first, match.second);
+                return new Pair<>(findVoice("rus", "RUS", "").first, match.second);
             default:
                 return match;
         }
@@ -194,7 +190,7 @@ public class TtsService extends TextToSpeechService {
 
     @Override
     protected int onIsLanguageAvailable(String language, String country, String variant) {
-        return findVoice(language, country, variant).second;
+        return findVoice("rus", "RUS", variant).second;
     }
 
     @Override
@@ -213,7 +209,7 @@ public class TtsService extends TextToSpeechService {
 
     @Override
     public String onGetDefaultVoiceNameFor(String language, String country, String variant) {
-        final Voice match = getDefaultVoiceFor(language, country, variant).first;
+        final Voice match = getDefaultVoiceFor("rus", "RUS", variant).first;
         return (match == null) ? null : match.name;
     }
 
