@@ -71,8 +71,8 @@ android {
 
     defaultConfig {
         minSdk 19
-        targetSdk 30
-        versionCode 22
+        targetSdk 31
+        versionCode 27
         applicationId "me.alex19ep.espeak"
         versionName "1.52-dev"
     }
