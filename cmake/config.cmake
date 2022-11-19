@@ -1,0 +1,26 @@
+include(CheckSymbolExists)
+check_symbol_exists(mkstemp "stdlib.h" HAVE_MKSTEMP)
+
+find_program(MBROLA_BIN "mbrola")
+find_library(SONIC_LIB sonic)
+find_path(SONIC_INC "sonic.h")
+find_library(PCAUDIO_LIB pcaudio)
+find_path(PCAUDIO_INC "pcaudiolib/audio.h")
+
+if (MBROLA_BIN)
+  set(HAVE_MBROLA ON)
+endif(MBROLA_BIN)
+if (SONIC_LIB AND SONIC_INC)
+  set(HAVE_LIBSONIC ON)
+endif()
+if (PCAUDIO_LIB AND PCAUDIO_INC)
+  set(HAVE_LIBPCAUDIO ON)
+endif()
+
+option(USE_MBROLA "Use mbrola for speech synthesis" ${HAVE_MBROLA})
+option(USE_LIBSONIC "Use libsonit for faster speech rates" ${HAVE_LIBSONIC})
+option(USE_LIBPCAUDIO "Use libPcAudio for sound output" ${HAVE_LIBPCAUDIO})
+
+option(USE_KLATT "Use klatt for speech synthesis" ON)
+option(USE_SPEECHPLAYER "Use speech-player for speech synthesis" ON)
+option(USE_ASYNC "Support asynchronous speech synthesis" ON)

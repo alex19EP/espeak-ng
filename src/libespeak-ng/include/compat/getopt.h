@@ -1,7 +1,8 @@
-/*
- * Copyright (C) 2005 to 2013 by Jonathan Duddington
+/* Compatibility shim for <getopt.h>
+ *
+ * Copyright (C) 2006 to 2013 by Jonathan Duddington
  * email: jonsd@users.sourceforge.net
- * Copyright (C) 2015-2016 Reece H. Dunn
+ * Copyright (C) 2016 Reece H. Dunn
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +18,32 @@
  * along with this program; if not, see: <http://www.gnu.org/licenses/>.
  */
 
-#define PROGRAM_NAME "speak-ng"
-#define PLAYBACK_MODE (ENOUTPUT_MODE_SYNCHRONOUS | ENOUTPUT_MODE_SPEAK_AUDIO)
+#ifndef GETOPT_H_COMPAT_SHIM
+#define GETOPT_H_COMPAT_SHIM
 
-#include "espeak-ng.c"
+#if __has_include_next(<getopt.h>)
+#pragma GCC system_header // Silence "warning: #include_next is a GCC extension"
+#include_next <getopt.h>
+#else
+
+struct option {
+	char *name;
+	int has_arg;
+	int *flag;
+	int val;
+};
+
+extern int optind;
+extern char *optarg;
+
+#define no_argument 0
+#define required_argument 1
+#define optional_argument 2
+
+int
+getopt_long(int nargc, char * const *nargv, const char *options,
+            const struct option *long_options, int *idx);
+
+#endif
+
+#endif
