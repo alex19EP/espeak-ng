@@ -38,18 +38,18 @@
 // my_mutex: protects my_thread_is_talking,
 static pthread_mutex_t my_mutex;
 static pthread_cond_t my_cond_start_is_required;
-static bool my_start_is_required = false;
+static volatile bool my_start_is_required = false;
 static pthread_cond_t my_cond_stop_is_required;
-static bool my_stop_is_required = false;
+static volatile bool my_stop_is_required = false;
 static pthread_cond_t my_cond_stop_is_acknowledged;
-static bool my_stop_is_acknowledged = false;
-static bool my_terminate_is_required = 0;
+static volatile bool my_stop_is_acknowledged = false;
+static volatile bool my_terminate_is_required = 0;
 // my_thread: polls the audio duration and compares it to the duration of the first event.
 static pthread_t my_thread;
-static bool thread_inited;
+static volatile bool thread_inited;
 
 static t_espeak_callback *my_callback = NULL;
-static bool my_event_is_running = false;
+static volatile bool my_event_is_running = false;
 
 enum {
 	MIN_TIMEOUT_IN_MS = 10,
@@ -214,7 +214,7 @@ espeak_ng_STATUS event_declare(espeak_EVENT *event)
 		pthread_mutex_unlock(&my_mutex);
 	} else {
 		my_start_is_required = true;
-		pthread_cond_signal(&my_cond_start_is_required);
+		pthread_cond_broadcast(&my_cond_start_is_required);
 		status = pthread_mutex_unlock(&my_mutex);
 	}
 
@@ -231,7 +231,7 @@ espeak_ng_STATUS event_clear_all()
 	int a_event_is_running = 0;
 	if (my_event_is_running) {
 		my_stop_is_required = true;
-		pthread_cond_signal(&my_cond_stop_is_required);
+		pthread_cond_broadcast(&my_cond_stop_is_required);
 		a_event_is_running = 1;
 	} else
 		init(); // clear pending events
@@ -312,7 +312,7 @@ static void *polling_thread(void *p)
 			// acknowledge the stop request
 			(void)pthread_mutex_lock(&my_mutex);
 			my_stop_is_acknowledged = true;
-			(void)pthread_cond_signal(&my_cond_stop_is_acknowledged);
+			(void)pthread_cond_broadcast(&my_cond_stop_is_acknowledged);
 			(void)pthread_mutex_unlock(&my_mutex);
 		}
 	}
@@ -385,8 +385,8 @@ void event_terminate()
 {
 	if (thread_inited) {
 		my_terminate_is_required = true;
-		pthread_cond_signal(&my_cond_start_is_required);
-		pthread_cond_signal(&my_cond_stop_is_required);
+		pthread_cond_broadcast(&my_cond_start_is_required);
+		pthread_cond_broadcast(&my_cond_stop_is_required);
 		pthread_join(my_thread, NULL);
 		my_terminate_is_required = false;
 

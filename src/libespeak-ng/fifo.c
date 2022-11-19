@@ -43,26 +43,26 @@
 // my_mutex: protects my_thread_is_talking,
 // my_stop_is_required, and the command fifo
 static pthread_mutex_t my_mutex;
-static bool my_command_is_running = false;
+static volatile bool my_command_is_running = false;
 static pthread_cond_t my_cond_command_is_running;
-static bool my_stop_is_required = false;
-static bool my_terminate_is_required = 0;
+static volatile bool my_stop_is_required = false;
+static volatile bool my_terminate_is_required = 0;
 
 // my_thread: reads commands from the fifo, and runs them.
 static pthread_t my_thread;
 
 static pthread_cond_t my_cond_start_is_required;
-static bool my_start_is_required = false;
+static volatile bool my_start_is_required = false;
 
 static pthread_cond_t my_cond_stop_is_acknowledged;
-static bool my_stop_is_acknowledged = false;
+static volatile bool my_stop_is_acknowledged = false;
 
 static void *say_thread(void *);
 
 static espeak_ng_STATUS push(t_espeak_command *the_command);
 static t_espeak_command *pop(void);
 static void init(int process_parameters);
-static int node_counter = 0;
+static volatile int node_counter = 0;
 
 enum {
 	MAX_NODE_COUNTER = 400,
@@ -94,8 +94,9 @@ void fifo_init()
 
 	// leave once the thread is actually started
 	assert(-1 != pthread_mutex_lock(&my_mutex));
+	static const struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000 };
 	while (my_stop_is_acknowledged == false) {
-		while ((pthread_cond_wait(&my_cond_stop_is_acknowledged, &my_mutex) == -1) && errno == EINTR)
+		while ((pthread_cond_timedwait(&my_cond_stop_is_acknowledged, &my_mutex, &ts) == -1) && errno == EINTR)
 			;
 	}
 	my_stop_is_acknowledged = false;
@@ -114,7 +115,7 @@ espeak_ng_STATUS fifo_add_command(t_espeak_command *the_command)
 	}
 	
 	my_start_is_required = true;
-	pthread_cond_signal(&my_cond_start_is_required);
+	pthread_cond_broadcast(&my_cond_start_is_required);
 
 	while (my_start_is_required && !my_command_is_running) {
 		if((status = pthread_cond_wait(&my_cond_command_is_running, &my_mutex)) != ENS_OK && errno != EINTR) {
@@ -150,7 +151,7 @@ espeak_ng_STATUS fifo_add_commands(t_espeak_command *command1, t_espeak_command 
 	}
 
 	my_start_is_required = true;
-	pthread_cond_signal(&my_cond_start_is_required);
+	pthread_cond_broadcast(&my_cond_start_is_required);
 	
 	while (my_start_is_required && !my_command_is_running) {
 		if((status = pthread_cond_wait(&my_cond_command_is_running, &my_mutex)) != ENS_OK && errno != EINTR) {
@@ -266,7 +267,7 @@ static espeak_ng_STATUS close_stream()
 				return a_status;
 
 			my_stop_is_acknowledged = true;
-			a_status = pthread_cond_signal(&my_cond_stop_is_acknowledged);
+			a_status = pthread_cond_broadcast(&my_cond_stop_is_acknowledged);
 			if(a_status != ENS_OK)
 				return a_status;
 			a_status = pthread_mutex_unlock(&my_mutex);
@@ -286,7 +287,7 @@ static void *say_thread(void *p)
 	// announce that thread is started
 	assert(-1 != pthread_mutex_lock(&my_mutex));
 	my_stop_is_acknowledged = true;
-	assert(-1 != pthread_cond_signal(&my_cond_stop_is_acknowledged));
+	assert(-1 != pthread_cond_broadcast(&my_cond_stop_is_acknowledged));
 	assert(-1 != pthread_mutex_unlock(&my_mutex));
 
 	bool look_for_inactivity = false;
@@ -347,7 +348,7 @@ static void *say_thread(void *p)
 
 			// acknowledge the stop request
 			my_stop_is_acknowledged = true;
-			int a_status = pthread_cond_signal(&my_cond_stop_is_acknowledged);
+			int a_status = pthread_cond_broadcast(&my_cond_stop_is_acknowledged);
 			assert(a_status != -1);
 			pthread_mutex_unlock(&my_mutex);
 
@@ -440,8 +441,8 @@ void fifo_terminate()
 {
 	pthread_mutex_lock(&my_mutex);
 	my_terminate_is_required = true;
+	pthread_cond_broadcast(&my_cond_start_is_required);
 	pthread_mutex_unlock(&my_mutex);
-	pthread_cond_signal(&my_cond_start_is_required);
 	pthread_join(my_thread, NULL);
 	my_terminate_is_required = false;
 
