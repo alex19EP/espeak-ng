@@ -6,9 +6,12 @@ project(espeak-ng
   HOMEPAGE_URL "https://github.com/espeak-ng/espeak-ng"
 )
 
+include(CTest)
+
 include(cmake/config.cmake)
 add_subdirectory(src)
 include(cmake/data.cmake)
+add_subdirectory(tests)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 

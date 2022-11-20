@@ -81,7 +81,7 @@ jobs:
             sanitize_env: "UBSAN_OPTIONS=halt_on_error=1"
 
           - sanitizer: "valgrind"
-            sanitize_env: 'VALGRIND="libtool --mode=execute valgrind --track-origins=yes --leak-check=full --error-exitcode=1"'
+            sanitize_env: 'VALGRIND="valgrind --track-origins=yes --leak-check=full --error-exitcode=1"'
           
         exclude:
           - os: macos
@@ -213,7 +213,7 @@ jobs:
         [ 'x${{ matrix.cross }}' = 'xyes' ] && export LD="${{ matrix.ccarch }}-${{ matrix.sys }}-ld"
         export CFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.compiler_flags }} ${{ matrix.sanitizer_cflags }} ${{ matrix.archcflags }}"
         export CXXFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.compiler_flags }} ${{ matrix.sanitizer_cflags }} ${{ matrix.archcflags }}"
-        cmake -Bbuild ${{ matrix.config }} -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
+        cmake -Bbuild ${{ matrix.config }} -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DUSE_ASYNC:BOOL=OFF
 
     - name: config-failed-upload
       if: ${{ failure() }}
@@ -227,6 +227,7 @@ jobs:
       run: cmake --build build --target espeak-ng
     - name: make-data
       run: ${{ matrix.sanitize_env }} ${{ matrix.runenv }} cmake --build build --target data
-
-    # - name: test
-    #   run: ${{ matrix.sanitize_env }} ${{ matrix.runenv }} make check
+    - name: test
+      run: |
+        cmake --build build --target tests
+        ${{ matrix.sanitize_env }} ${{ matrix.runenv }} ctest --test-dir build -Ttest -j1 --output-on-failure

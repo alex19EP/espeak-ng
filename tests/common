@@ -44,8 +44,7 @@ test_phon() {
     fi
 
     echo "testing ${TEST_LANG} $MESSAGE"
-    ESPEAK_DATA_PATH=`pwd` LD_LIBRARY_PATH=src:${LD_LIBRARY_PATH} \
-        $VALGRIND src/espeak-ng -xq ${OPTIONS} -v ${TEST_LANG} "${TEST_TEXT}" \
+    $VALGRIND $ESPEAK_BIN -xq ${OPTIONS} -v ${TEST_LANG} "${TEST_TEXT}" \
         > actual.txt || exit 1
     echo "${EXPECTED}" > expected.txt
     if [ "$MESSAGE" = "Ignore" ] ; then
@@ -62,9 +61,8 @@ test_wav () {
         TEST_TEXT=$3
         MESSAGE=$4
 
-        echo "testing ${VOICE}${MESSAGE}"
-        ESPEAK_DATA_PATH=`pwd` LD_LIBRARY_PATH=src:${LD_LIBRARY_PATH} \
-                $VALGRIND src/espeak-ng -D --stdout -v ${VOICE} "${TEST_TEXT}" \
+        echo "testing ${VOICE} ${MESSAGE}"
+        $VALGRIND $ESPEAK_BIN -D --stdout -v ${VOICE} "${TEST_TEXT}" \
                 > actual.txt || exit 1
         < actual.txt $sha1sum | awk '{ print $1 }' > sum.txt
         echo "${EXPECTED}" > expected.txt
@@ -82,8 +80,7 @@ test_wav_grep () {
         TEST_TEXT=$3
         MESSAGE=$4
         echo "testing ${VOICE}${MESSAGE}"
-        ESPEAK_DATA_PATH=`pwd` LD_LIBRARY_PATH=src:${LD_LIBRARY_PATH} \
-                $VALGRIND src/espeak-ng -D --stdout -v ${VOICE} "${TEST_TEXT}" \
+        $VALGRIND $ESPEAK_BIN -D --stdout -v ${VOICE} "${TEST_TEXT}" \
                 > actual.txt || exit 1
         < actual.txt $sha1sum | awk '{ print $1 }' > sum.txt
         if [ "$MESSAGE" = "Ignore" ] ; then
@@ -111,8 +108,7 @@ test_replace() {
     fi
 
     echo "testing ${TEST_LANG}"
-    ESPEAK_DATA_PATH=`pwd` LD_LIBRARY_PATH=src:${LD_LIBRARY_PATH} \
-        $VALGRIND src/espeak-ng -Xq -v ${TEST_LANG} "${TEST_TEXT}" \
+    $VALGRIND $ESPEAK_BIN -Xq -v ${TEST_LANG} "${TEST_TEXT}" \
         > actual.txt || exit 1
     < actual.txt grep -a -E "(Translate|Found:) " | sed -e 's/ \[.*][ ]*$//g' > filtered.txt
     if [ "$MESSAGE" = "Ignore" ] ; then
@@ -121,4 +117,3 @@ test_replace() {
         diff expected.txt filtered.txt || exit 1
     fi
 }
-
